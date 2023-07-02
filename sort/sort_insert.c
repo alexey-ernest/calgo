@@ -35,11 +35,11 @@ int main(int argc, char const *argv[])
 void _sort_insert(int *arr, int n) {
 	int i, j, k;
 	for (i = 1; i < n; i++) {
-		for (j = i - 1; arr[j] > arr[j+1] && j >= 0; j--) {
-			k = arr[j];
-			arr[j] = arr[j + 1];
-			arr[j + 1] = k;
+		k = arr[i];
+		for (j = i - 1; j >= 0 && arr[j] > k; j--) {
+			arr[j + 1] = arr[j];
 		}
+		arr[j + 1] = k;
 	}
 }
 
