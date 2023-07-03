@@ -18,8 +18,34 @@ void _merge(int *, int, int, int);
 void _sort_merge_s(int*, int, int);
 void _merge_s(int *, int, int, int);
 
+char _opt = '0';
+
 int main(int argc, char const *argv[])
 {
+	while (--argc > 0) {
+		++argv;
+		if (*(*argv)++ != '-')
+			continue;
+		switch (**argv) {
+			case 'O':
+				switch (*++(*argv)) {
+					case 's':
+						_opt = 's';
+						break;
+					case 'i':
+						_opt = 'i';
+						break;
+					default:
+						printf("unknown optimization param %s\n", *argv);
+						return 2;
+				}
+				break;
+			default: 
+				printf("unknown option %s\n", *argv);
+				return 1;
+		}
+	}
+
 	int *arr = (int *)malloc(MAX_ARR_LEN * sizeof(int));
 	int i = 0;
 	int num;
@@ -30,7 +56,12 @@ int main(int argc, char const *argv[])
 	}
 
 	// sort the array using merge sort algorithm
-	_sort_merge_s(arr, 0, i - 1);
+	if (_opt == 's') {
+		_sort_merge_s(arr, 0, i - 1);	
+	} else {
+		_sort_merge(arr, 0, i - 1);
+	}
+	
 
 	// print the result
 	int n = i;
