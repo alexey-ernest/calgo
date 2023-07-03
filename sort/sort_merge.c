@@ -2,17 +2,25 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define MAX_BUF_LEN 12
-#define MAX_ARR_LEN 1000000
+#define MAX_BUF_LEN 	12
+#define MAX_ARR_LEN 	10000000
+#define INF				(1u << 31) - 1
 
 int _getnum();
+
+/* classic merge sort */
 void _sort_merge(int*, int, int);
 void _merge(int *, int, int, int);
 
+/* optimized with sentinels */
+void _sort_merge_s(int*, int, int);
+void _merge_s(int *, int, int, int);
+
 int main(int argc, char const *argv[])
 {
-	int arr[MAX_ARR_LEN];
+	int *arr = (int *)malloc(MAX_ARR_LEN * sizeof(int));
 	int i = 0;
 	int num;
 
@@ -22,7 +30,7 @@ int main(int argc, char const *argv[])
 	}
 
 	// sort the array using merge sort algorithm
-	_sort_merge(arr, 0, i - 1);
+	_sort_merge_s(arr, 0, i - 1);
 
 	// print the result
 	int n = i;
@@ -42,9 +50,62 @@ void _sort_merge(int *a, int p, int r) {
 	_merge(a, p, q, r);
 }
 
-int inf = (1u << 31) - 1;
-
 void _merge(int *a, int p, int q, int r) {
+	int *la, *ra;
+	int n1, n2, i, j, k;
+
+	// copy left and right parts of the array
+	n1 = q - p + 1;
+	n2 = r - q;
+	la = (int *)malloc(n1 * sizeof(int));
+	ra = (int *)malloc(n2 * sizeof(int));
+	k = p;
+	for (i = 0; i < n1; i++) {
+		la[i] = a[k++];
+	}
+	for (j = 0; j < n2; j++) {
+		ra[j] = a[k++];
+	}
+
+	// merge
+	k = p;
+	i = 0;
+	j = 0;
+	while (i < n1 && j < n2) {
+		if (la[i] < ra[j]) {
+			a[k++] = la[i++];
+		} else {
+			a[k++] = ra[j++];
+		}
+	}
+
+	// copy tales
+	// if (i < n1) {
+	// 	memcpy((void *)(a + k), (void *)(la + i), (n1 - i) * sizeof(int));
+	// } else {
+	// 	memcpy((void *)(a + k), (void *)(ra + j), (n2 - j) * sizeof(int));
+	// }
+	while (i < n1) {
+		a[k++] = la[i++];
+	}
+	while (j < n2) {
+		a[k++] = ra[j++];
+	}
+
+	free((void *)la);
+	free((void *)ra);
+}
+
+void _sort_merge_s(int *a, int p, int r) {
+	if (p >= r)
+		return;
+	int q = (p + r) / 2; // greatest int <= q
+	_sort_merge_s(a, p, q);
+	_sort_merge_s(a, q + 1, r);
+	_merge_s(a, p, q, r);
+}
+
+void _merge_s(int *a, int p, int q, int r) {
 	int *la, *ra;
 	int n1, n2, i, j, k;
 
@@ -62,8 +123,8 @@ void _merge(int *a, int p, int q, int r) {
 	}
 
 	// add sentinel elements to the end
-	la[n1] = inf;
-	ra[n2] = inf;
+	la[n1] = INF;
+	ra[n2] = INF;
 
 	// merge
 	k = p;
