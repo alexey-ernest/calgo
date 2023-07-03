@@ -1,4 +1,7 @@
-/* Merge sort algorithm, read from stdin */
+/* Merge sort algorithm, read from stdin.
+   Options: -Os for sentinel;
+   			-Oi for insertion sort on smaller sub-arrays;
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
