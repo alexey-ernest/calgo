@@ -10,16 +10,21 @@
 #define MAX_BUF_LEN 	12
 #define MAX_ARR_LEN 	10000000
 #define INF				(1u << 31) - 1
+#define INSERT_SORT_LEN	32 // array size to sort with the insertion sort
 
 int _getnum();
 
 /* classic merge sort */
 void _sort_merge(int*, int, int);
-void _merge(int *, int, int, int);
+void _merge(int*, int, int, int);
 
 /* optimized with sentinels */
 void _sort_merge_s(int*, int, int);
-void _merge_s(int *, int, int, int);
+void _merge_s(int*, int, int, int);
+
+/* optimized with insertion sort for smaller sub-arrays */
+void _sort_merge_i(int*, int, int);
+void _sort_insert(int*, int, int);
 
 char _opt = '0';
 
@@ -59,12 +64,16 @@ int main(int argc, char const *argv[])
 	}
 
 	// sort the array using merge sort algorithm
-	if (_opt == 's') {
-		_sort_merge_s(arr, 0, i - 1);	
-	} else {
-		_sort_merge(arr, 0, i - 1);
-	}
-	
+	switch (_opt) {
+		case 's': 
+			_sort_merge_s(arr, 0, i - 1);
+			break;
+		case 'i':
+			_sort_merge_i(arr, 0, i - 1);
+			break;
+		default:
+			_sort_merge(arr, 0, i - 1);
+	}	
 
 	// print the result
 	int n = i;
@@ -174,6 +183,33 @@ void _merge_s(int *a, int p, int q, int r) {
 
 	free((void *)la);
 	free((void *)ra);
+}
+
+void _sort_insert(int *a, int p, int r) {
+	int i, j, k;
+	for (i = p + 1; i <= r; i++) {
+		k = a[i];
+		for (j = i - 1; j >= p && a[j] > k; j--) {
+			a[j + 1] = a[j];
+		}
+		a[j + 1] = k;
+	}
+}
+
+void _sort_merge_i(int *a, int p, int r) {
+	if (p >= r)
+		return;
+
+	if (r - p + 1 <= INSERT_SORT_LEN) {
+		// utilizing the insertion sort algorithm for smaller sub-arrays
+		_sort_insert(a, p, r);
+		return;
+	}
+
+	int q = (p + r) / 2; // greatest int <= q
+	_sort_merge_i(a, p, q);
+	_sort_merge_i(a, q + 1, r);
+	_merge_s(a, p, q, r);
 }
 
 char _buf[MAX_BUF_LEN];
