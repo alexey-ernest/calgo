@@ -58,7 +58,6 @@ void _max_subarray_brute(double *returns, int n, struct maxsum_t* res) {
 	int i, j, maxi, maxj;
 	double sum, maxsum;
 	maxsum = (int)(~((~0u) >> 1));
-	printf("%f\n", maxsum);
 	for (i = 0; i < n; i++) {
 		sum = 0.0;
 		for (j = i; j < n; j++) {
