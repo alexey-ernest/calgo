@@ -10,7 +10,7 @@
 #define MAX_BUF_LEN 	12
 #define MAX_ARR_LEN 	10000000
 #define INF				(1u << 31) - 1
-#define INSERT_SORT_LEN	32 // array size to sort with the insertion sort
+#define INSERT_SORT_LEN	64 // array size to sort with the insertion sort
 
 int _getnum();
 
