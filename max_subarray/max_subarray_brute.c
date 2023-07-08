@@ -29,7 +29,7 @@ int main(int argc, char const *argv[])
 	struct price_t p;
 	int i = 0;
 	while (_getprice(&p) != EOF) {
-		if (p.timestamp != NULL && p.price > 0.0) {
+		if (p.timestamp != NULL && p.price != 0.0) {
 			arr[i++] = p;
 		}
 	}
@@ -40,10 +40,6 @@ int main(int argc, char const *argv[])
 	// convert prices to daily returns
 	double returns[i];
 	_prices_to_returns(arr, returns, i);
-	// int j;
-	// for (j = 0; j < i; j++) {
-	// 	printf("%f\n", returns[j]);
-	// }
 
 	// find a maximum subarray of returns
 	struct maxsum_t res;

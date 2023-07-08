@@ -30,7 +30,7 @@ int main(int argc, char const *argv[])
 	struct price_t p;
 	int i = 0;
 	while (_getprice(&p) != EOF) {
-		if (p.timestamp != NULL && p.price > 0.0) {
+		if (p.timestamp != NULL && p.price != 0.0) {
 			arr[i++] = p;
 		}
 	}
