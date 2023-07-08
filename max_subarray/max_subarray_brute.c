@@ -20,7 +20,7 @@ struct maxsum_t {
 
 int _getprice(struct price_t*);
 void _reverse_prices(struct price_t*, int);
-double *_prices_to_returns(struct price_t*, int);
+void _prices_to_returns(struct price_t*, double *, int);
 void _max_subarray_brute(double *, int, struct maxsum_t*);
 
 int main(int argc, char const *argv[])
@@ -38,7 +38,8 @@ int main(int argc, char const *argv[])
 	_reverse_prices(arr, i);
 
 	// convert prices to daily returns
-	double *returns = _prices_to_returns(arr, i);
+	double returns[i];
+	_prices_to_returns(arr, returns, i);
 	// int j;
 	// for (j = 0; j < i; j++) {
 	// 	printf("%f\n", returns[j]);
@@ -74,15 +75,12 @@ void _max_subarray_brute(double *returns, int n, struct maxsum_t* res) {
 	res->r = maxj;
 }
 
-double *_prices_to_returns(struct price_t *p, int n) {
+void _prices_to_returns(struct price_t *p, double *r, int n) {
 	int i;
-	double *returns = malloc(n * sizeof(double));
-	returns[0] = 0.0;
+	r[0] = 0.0;
 	for (i = 1; i < n; i++) {
-		returns[i] = p[i].price - p[i-1].price;
+		r[i] = p[i].price - p[i-1].price;
 	}
-
-	return returns;
 }
 
 void _reverse_prices(struct price_t *prices, int n) {
