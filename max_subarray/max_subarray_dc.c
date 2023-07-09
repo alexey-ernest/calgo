@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_LEN 		100000
+#define MAX_LEN 		1000000
 #define MAX_BUF_LEN 	100
 #define MAX_COL_NUM		20
 
@@ -29,7 +29,7 @@ int main(int argc, char const *argv[])
 	struct price_t arr[MAX_LEN];
 	struct price_t p;
 	int i = 0;
-	while (_getprice(&p) != EOF) {
+	while (_getprice(&p) != EOF && i < MAX_LEN) {
 		if (p.timestamp != NULL && p.price != 0.0) {
 			arr[i++] = p;
 		}
