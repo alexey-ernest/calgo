@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_LEN 		1000000
+#define MAX_LEN 		100000000
 #define MAX_BUF_LEN 	100
 #define MAX_COL_NUM		20
 
@@ -25,7 +25,7 @@ void _max_subarray_dyn(double *, int, struct maxsum_t*);
 
 int main(int argc, char const *argv[])
 {
-	struct price_t arr[MAX_LEN];
+	struct price_t *arr = malloc(MAX_LEN * sizeof(struct price_t));
 	struct price_t p;
 	int i = 0;
 	while (_getprice(&p) != EOF && i < MAX_LEN) {
@@ -38,7 +38,7 @@ int main(int argc, char const *argv[])
 	_reverse_prices(arr, i);
 
 	// convert prices to daily returns
-	double returns[i];
+	double *returns = malloc(i * sizeof(double));
 	_prices_to_returns(arr, returns, i);
 
 	// find a maximum subarray of returns
@@ -48,6 +48,8 @@ int main(int argc, char const *argv[])
 		res.sum, arr[res.l-1].price, arr[res.r].price, 
 		arr[res.l-1].timestamp, arr[res.r].timestamp);
 
+	free(returns);
+	free(arr);
 	return 0;
 }
 
