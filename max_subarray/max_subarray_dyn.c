@@ -22,6 +22,7 @@ int _getprice(struct price_t*);
 void _reverse_prices(struct price_t*, int);
 void _prices_to_returns(struct price_t*, double *, int);
 void _max_subarray_dyn(double *, int, struct maxsum_t*);
+void _max_subarray_dyn2(double *, int, struct maxsum_t*);
 
 int main(int argc, char const *argv[])
 {
@@ -43,7 +44,7 @@ int main(int argc, char const *argv[])
 
 	// find a maximum subarray of returns
 	struct maxsum_t res;
-	_max_subarray_dyn(returns, i, &res);
+	_max_subarray_dyn2(returns, i, &res);
 	printf("%f\t[%f, %f]\t[%s, %s]\n", 
 		res.sum, arr[res.l-1].price, arr[res.r].price, 
 		arr[res.l-1].timestamp, arr[res.r].timestamp);
@@ -89,6 +90,33 @@ void _max_subarray_dyn(double *returns, int n, struct maxsum_t* res) {
 
 	free(dyn);
 	free(at);
+}
+
+void _max_subarray_dyn2(double *returns, int n, struct maxsum_t* res) {
+	res->sum = 0;
+	res->l = -1;
+	res->r = -1;
+	double sum;
+	int i, l, r;
+	sum = 0;
+	l = 0;
+	r = 0;
+	for (i = 0; i < n; i++) {
+		sum += returns[i];
+		if (sum <= 0) {
+			sum = 0;
+			l = i + 1;
+			r = i + 1;
+		} else {
+			r = i;
+		}
+
+		if (sum > res->sum) {
+			res->sum = sum;
+			res->l = l;
+			res->r = r;
+		}
+	}
 }
 
 void _prices_to_returns(struct price_t *p, double *r, int n) {
