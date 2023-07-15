@@ -13,12 +13,15 @@ struct _matrix {
 };
 
 struct _matrix* _gen_rand_matrix(int);
-struct _matrix* _mul_square(struct _matrix*, struct _matrix*);
+struct _matrix* _mul_square_brute(struct _matrix*, struct _matrix*);
 
 int main(int argc, char const *argv[])
 {
+	// init random generator
+	srand(time(NULL));
+	
 	if (argc < 2) {
-		printf("usage: matrix_brute 100\n");
+		printf("usage: matrix_brute 1000\n");
 		return 1;
 	}
 
@@ -26,7 +29,7 @@ int main(int argc, char const *argv[])
 
 	struct _matrix *m1 = _gen_rand_matrix(n);
 	struct _matrix *m2 = _gen_rand_matrix(n);
-	struct _matrix *mul = _mul_square(m1, m2);
+	struct _matrix *mul = _mul_square_brute(m1, m2);
 	// int i, j;
 	// for (i = 0; i < n; i++) {
 	// 	for (j = 0; j < n; j++) {
@@ -37,7 +40,7 @@ int main(int argc, char const *argv[])
 	return 0;
 }
 
-struct _matrix* _mul_square(struct _matrix *m1, struct _matrix *m2) {
+struct _matrix* _mul_square_brute(struct _matrix *m1, struct _matrix *m2) {
 	if (m1->rows != m1->cols || m2->rows != m2->cols || m1->rows != m2->rows) {
 		return NULL;
 	}
@@ -62,9 +65,7 @@ struct _matrix* _mul_square(struct _matrix *m1, struct _matrix *m2) {
 	return res;
 }
 
-struct _matrix* _gen_rand_matrix(int n) {
-	// init random generator
-	srand(time(NULL));
+struct _matrix* _gen_rand_matrix(int n) {	
 	int max_int = (int)(~(0u) >> 1);
 
 	int i, j;
