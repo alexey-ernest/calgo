@@ -1,4 +1,4 @@
-/* Matrix multiplication, divide-and-conquer (O(n^3)) */
+/* Matrix multiplication, divide-and-conquer (O(n^3) time and O(n) space) */
 
 #include <stdio.h>
 #include <stdlib.h>
