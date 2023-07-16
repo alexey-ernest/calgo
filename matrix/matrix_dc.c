@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_VAL	1000
+#define MAX_VAL	100
 
 struct _matrix {
 	int rows;
@@ -13,10 +13,11 @@ struct _matrix {
 };
 
 struct _matrix* _gen_rand_matrix(int);
-struct _matrix* _mul_square_dc(struct _matrix*, struct _matrix*, int[4], int[4]);
+void _mul_square_dc(struct _matrix*, struct _matrix*, int[4], int[4], struct _matrix*);
+void _mul_square_brute(struct _matrix *, struct _matrix *, struct _matrix *);
 void _free_matrix(struct _matrix*);
-void _add_matrix(struct _matrix*, struct _matrix*, struct _matrix*, int, int);
 void _print(struct _matrix*);
+void _certify_mul(struct _matrix*, struct _matrix*, struct _matrix*);
 
 int main(int argc, char const *argv[])
 {
@@ -38,7 +39,15 @@ int main(int argc, char const *argv[])
 	struct _matrix *m2 = _gen_rand_matrix(n);
 
 	int ind[4] = {0, n-1, 0, n-1};
-	struct _matrix *mul = _mul_square_dc(m1, m2, ind, ind);
+	struct _matrix *mul = (struct _matrix*)malloc(sizeof(struct _matrix));
+	mul->rows = n;
+	mul->cols = n;
+	mul->data = (int **)malloc(n * sizeof(int *));
+	int i;
+	for (i = 0; i < n; i++) {
+		mul->data[i] = (int *)malloc(n * sizeof(int));
+	}
+	_mul_square_dc(m1, m2, ind, ind, mul);
 	
 	// _print(m1);
 	// printf("\n");
@@ -46,11 +55,51 @@ int main(int argc, char const *argv[])
 	// printf("\n");
 	// _print(mul);
 	
+	// _certify_mul(m1, m2, mul);
+
 	_free_matrix(m1);
 	_free_matrix(m2);
 	_free_matrix(mul);
+	free(m1);
+	free(m2);
+	free(mul);
 
 	return 0;
+}
+
+void _mul_square_brute(struct _matrix *m1, struct _matrix *m2, struct _matrix *res) {
+	if (m1->rows != m1->cols || m2->rows != m2->cols || m1->rows != m2->rows) {
+		return;
+	}
+	int n = m1->rows;
+
+	int i, j, k;
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			res->data[i][j] = 0;
+			for (k = 0; k < n; k++) {
+				res->data[i][j] += m1->data[i][k] * m2->data[k][j];
+			}
+		}
+	}
+}
+
+void _certify_mul(struct _matrix* m1, struct _matrix* m2, struct _matrix* res) {
+	int i, j, k, r;
+	int n = m1->rows;
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			r = 0;
+			for (k = 0; k < n; k++) {
+				r += m1->data[i][k] * m2->data[k][j];
+			}
+			if (r != res->data[i][j]) {
+				printf("matrix multiplication is incorrect\n");
+				return;
+			}
+		}
+	}
+	printf("matrix multiplication is correct\n");
 }
 
 void _print(struct _matrix* m) {
@@ -63,43 +112,38 @@ void _print(struct _matrix* m) {
 	}
 }
 
-struct _matrix* _mul_square_dc(struct _matrix *m1, struct _matrix *m2, 
-	int ind1[4], int ind2[4]) {
+void _mul_square_dc(struct _matrix *m1, struct _matrix *m2, 
+	int ind1[4], int ind2[4], struct _matrix *res) {
 	if (m1->rows != m1->cols || m2->rows != m2->cols || 
 		m1->rows != m2->rows) {
-		return NULL;
+		return;
 	}
 	if ((ind1[1] - ind1[0]) != (ind1[3] - ind1[2]) || 
 		(ind2[1] - ind2[0]) != (ind2[3] - ind2[2]) ||
 		(ind1[1] - ind1[0]) != (ind2[1] - ind2[0])) {
 		// incompatible
-		return NULL;
+		return;
 	}
 
-	int n = ind1[1] - ind1[0] + 1;
-
-	// init res matrix
-	struct _matrix *res = (struct _matrix*)malloc(sizeof(struct _matrix));
-	res->rows = n;
-	res->cols = n;
-	res->data = (int **)malloc(n * sizeof(int*));
-	int i;
-	for (i = 0; i < n; i++) {
-		res->data[i] = (int *)malloc(n * sizeof(int));
-	}
-
-	if (n == 1) {
-		// base case
-		res->data[0][0] = m1->data[ind1[0]][ind1[2]] * m2->data[ind2[0]][ind2[2]];
-		return res;
-	}
-	
-	// divide and conquer sub-problems
-	int q = (ind1[1] - ind1[0]) / 2; // mid point
-	// a11*b11 + a12*b21, a11*b12 + a12*b22
-	// a21*b11 + a22*b21, a21*b12 + a22*b22
 	int i1 = ind1[0], i2 = ind1[1], j1 = ind1[2], j2 = ind1[3],
 		p1 = ind2[0], p2 = ind2[1], r1 = ind2[2], r2 = ind2[3];
+	int n = i2 - i1 + 1;
+	if (res->rows != n || res->cols !=n) {
+		// incompatible result dimension
+		return;
+	}
+	if (n == 1) {
+		// base case
+		res->data[0][0] = m1->data[i1][j1] * m2->data[p1][r1];
+		return;
+	}
+	
+	// divide and conquer
+	int q = (i2 - i1) / 2; // mid point relative index
+	// a11*b11 + a12*b21, a12*b22 + a11*b12
+	// a21*b11 + a22*b21, a22*b22 + a21*b12
+
+	// calculate indices: O(1)
 	int a[4][4] = {
 		{i1, i1 + q, j1, j1 + q}, 		{i1, i1 + q, j1 + q + 1, j2},
 		{i1 + q + 1, i2, j1, j1 + q}, 	{i1 + q + 1, i2, j1 + q + 1, j2}
@@ -109,41 +153,44 @@ struct _matrix* _mul_square_dc(struct _matrix *m1, struct _matrix *m2,
 		{p1 + q + 1, p2, r1, r1 + q}, 	{p1 + q + 1, p2, r1 + q + 1, r2}
 	};
 
-	struct _matrix *a11b11 = _mul_square_dc(m1, m2, a[0], b[0]);
-	struct _matrix *a12b21 = _mul_square_dc(m1, m2, a[1], b[2]);
-	struct _matrix *a11b12 = _mul_square_dc(m1, m2, a[0], b[1]);
-	struct _matrix *a12b22 = _mul_square_dc(m1, m2, a[1], b[3]);
-	struct _matrix *a21b11 = _mul_square_dc(m1, m2, a[2], b[0]);
-	struct _matrix *a22b21 = _mul_square_dc(m1, m2, a[3], b[2]);
-	struct _matrix *a21b12 = _mul_square_dc(m1, m2, a[2], b[1]);
-	struct _matrix *a22b22 = _mul_square_dc(m1, m2, a[3], b[3]);
-
-	// merge results
-	_add_matrix(a11b11, a12b21, res, 0, 0);
-	_add_matrix(a11b12, a12b22, res, 0, q + 1);
-	_add_matrix(a21b11, a22b21, res, q + 1, 0);
-	_add_matrix(a21b12, a22b22, res, q + 1, q + 1);
-
-	// free memory
-	_free_matrix(a11b11);
-	_free_matrix(a12b21);
-	_free_matrix(a11b12);
-	_free_matrix(a12b22);
-	_free_matrix(a21b11);
-	_free_matrix(a22b21);
-	_free_matrix(a21b12);
-	_free_matrix(a22b22);
-
-	return res;
-}
-
-void _add_matrix(struct _matrix* m1, struct _matrix* m2, struct _matrix* res, 
-	int p, int q) {
-	int i, j;
-	for (i = 0; i < m1->rows; i++) {
-		for (j = 0; j < m1->cols; j++) {
-			res->data[p + i][q + j] = m1->data[i][j] + m2->data[i][j];
+	// solve sub-problems: 8*T(n/2) time and O(n) space
+	struct _matrix subs[8];
+	int k, i;
+	for (k = 0; k < 8; k++) {
+		subs[k].rows = n/2;
+		subs[k].cols = n/2;
+		subs[k].data = (int **)malloc(n/2 * sizeof(int *));
+		for (i = 0; i < n/2; i++) {
+			subs[k].data[i] = (int *)malloc(n/2 * sizeof(int));
 		}
+	}
+	_mul_square_dc(m1, m2, a[0], b[0], &subs[0]);
+	_mul_square_dc(m1, m2, a[1], b[2], &subs[1]);
+	_mul_square_dc(m1, m2, a[1], b[3], &subs[2]);
+	_mul_square_dc(m1, m2, a[0], b[1], &subs[3]);
+	_mul_square_dc(m1, m2, a[2], b[0], &subs[4]);
+	_mul_square_dc(m1, m2, a[3], b[2], &subs[5]);
+	_mul_square_dc(m1, m2, a[3], b[3], &subs[6]);
+	_mul_square_dc(m1, m2, a[2], b[1], &subs[7]);
+
+	// combine the results: O(n^2)
+	int j;
+	for (i = 0; i < n/2; i++) {
+		for (j = 0; j < n/2; j++) {
+			// a11*b11 + a12*b21
+			res->data[i][j] = subs[0].data[i][j] + subs[1].data[i][j];
+			// a12*b22 + a11*b12
+			res->data[i][j+q+1] = subs[2].data[i][j] + subs[3].data[i][j];
+			// a21*b11 + a22*b21
+			res->data[i+q+1][j] = subs[4].data[i][j] + subs[5].data[i][j];
+			// a22*b22 + a21*b12
+			res->data[i+q+1][j+q+1] = subs[6].data[i][j] + subs[7].data[i][j];
+		}
+	}
+	
+	// free memory
+	for (k = 0; k < 8; k++) {
+		_free_matrix(&subs[k]);
 	}
 }
 
@@ -153,7 +200,6 @@ void _free_matrix(struct _matrix *m) {
 		free(m->data[i]);
 	}
 	free(m->data);
-	free(m);
 }
 
 struct _matrix* _gen_rand_matrix(int n) {
