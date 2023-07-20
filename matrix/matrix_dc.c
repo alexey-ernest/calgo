@@ -1,4 +1,4 @@
-/* Matrix multiplication, divide-and-conquer (O(n^3) time and O(n) space) */
+/* Matrix multiplication, divide-and-conquer (O(n^3) time and O(n^3) space) */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -153,7 +153,7 @@ void _mul_square_dc(struct _matrix *m1, struct _matrix *m2,
 		{p1 + q + 1, p2, r1, r1 + q}, 	{p1 + q + 1, p2, r1 + q + 1, r2}
 	};
 
-	// solve sub-problems: 8*T(n/2) time and O(n) space
+	// solve sub-problems: 8*T(n/2) time and O(n^2) space
 	struct _matrix subs[8];
 	int k, i;
 	for (k = 0; k < 8; k++) {
@@ -188,6 +188,8 @@ void _mul_square_dc(struct _matrix *m1, struct _matrix *m2,
 		}
 	}
 	
+	// total: T(n) = 8*T(n/2) + O(n^2)
+
 	// free memory
 	for (k = 0; k < 8; k++) {
 		_free_matrix(&subs[k]);
