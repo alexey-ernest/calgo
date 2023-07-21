@@ -51,13 +51,13 @@ int main(int argc, char const *argv[])
 	}
 	_mul_square_strassen(m1, m2, ind, ind, mul);
 	
-	_print(m1);
-	printf("\n");
-	_print(m2);
-	printf("\n");
-	_print(mul);
+	// _print(m1);
+	// printf("\n");
+	// _print(m2);
+	// printf("\n");
+	// _print(mul);
 	
-	_certify_mul(m1, m2, mul);
+	// _certify_mul(m1, m2, mul);
 
 	_free_matrix(m1);
 	_free_matrix(m2);
@@ -116,14 +116,11 @@ void _print(struct _matrix* m) {
 
 void _mul_square_strassen(struct _matrix *m1, struct _matrix *m2, 
 	int ind1[4], int ind2[4], struct _matrix *res) {
-	if (m1->rows != m1->cols || m2->rows != m2->cols || 
-		m1->rows != m2->rows) {
-		return;
-	}
 	if ((ind1[1] - ind1[0]) != (ind1[3] - ind1[2]) || 
 		(ind2[1] - ind2[0]) != (ind2[3] - ind2[2]) ||
 		(ind1[1] - ind1[0]) != (ind2[1] - ind2[0])) {
 		// incompatible
+		printf("error: incompatible matrices\n");
 		return;
 	}
 
@@ -132,6 +129,7 @@ void _mul_square_strassen(struct _matrix *m1, struct _matrix *m2,
 	int n = i2 - i1 + 1;
 	if (res->rows != n || res->cols !=n) {
 		// incompatible result dimension
+		printf("error: incompatible matrices\n");
 		return;
 	}
 	if (n == 1) {
@@ -174,7 +172,7 @@ void _mul_square_strassen(struct _matrix *m1, struct _matrix *m2,
 	_sub_matrix(m2, m2, b[2], b[0], &s[3]);
 	_add_matrix(m1, m1, a[0], a[3], &s[4]);
 	_add_matrix(m2, m2, b[0], b[3], &s[5]);
-	_sub_matrix(m1, m1, a[2], a[3], &s[6]);
+	_sub_matrix(m1, m1, a[1], a[3], &s[6]);
 	_add_matrix(m2, m2, b[2], b[3], &s[7]);
 	_sub_matrix(m1, m1, a[0], a[2], &s[8]);
 	_add_matrix(m2, m2, b[0], b[1], &s[9]);
