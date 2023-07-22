@@ -14,6 +14,7 @@ struct _matrix {
 
 struct _matrix* _gen_rand_matrix(int);
 void _mul_square_dc(struct _matrix*, struct _matrix*, int[4], int[4], struct _matrix*);
+void _mul_square_dc_cache(struct _matrix*, struct _matrix*, int[4], int[4], struct _matrix*, int, struct _matrix ***);
 void _mul_square_brute(struct _matrix *, struct _matrix *, struct _matrix *);
 void _free_matrix(struct _matrix*);
 void _print(struct _matrix*);
@@ -38,7 +39,7 @@ int main(int argc, char const *argv[])
 	struct _matrix *m1 = _gen_rand_matrix(n);
 	struct _matrix *m2 = _gen_rand_matrix(n);
 
-	int ind[4] = {0, n-1, 0, n-1};
+	// allocating result matrix
 	struct _matrix *mul = (struct _matrix*)malloc(sizeof(struct _matrix));
 	mul->rows = n;
 	mul->cols = n;
@@ -47,7 +48,33 @@ int main(int argc, char const *argv[])
 	for (i = 0; i < n; i++) {
 		mul->data[i] = (int *)malloc(n * sizeof(int));
 	}
-	_mul_square_dc(m1, m2, ind, ind, mul);
+
+	// allocating multi-level caches for temporal calculations
+	int k = n;
+	int d = 0;
+	while (k > 0) {
+		k = k >> 1;
+		d++;
+	}
+
+	struct _matrix ***cache = (struct _matrix ***)malloc(d * sizeof(struct _matrix**));
+	int j, p = n;
+	for (k = 0; k < d - 1; k++) {
+		cache[k] = (struct _matrix **)malloc(8 * sizeof(struct _matrix*));
+		for (i = 0; i < 8; i++) {
+			cache[k][i] = (struct _matrix*)malloc(sizeof(struct _matrix));
+			cache[k][i]->rows = p/2;
+			cache[k][i]->cols = p/2;
+			cache[k][i]->data = (int **)malloc(p/2 * sizeof(int *));
+			for (j = 0; j < p/2; j++) {
+				cache[k][i]->data[j] = (int *)malloc(p/2 * sizeof(int));
+			}
+		}
+		p = p/2;
+	}
+
+	int ind[4] = {0, n-1, 0, n-1};
+	_mul_square_dc_cache(m1, m2, ind, ind, mul, 0, cache);
 	
 	// _print(m1);
 	// printf("\n");
@@ -56,6 +83,16 @@ int main(int argc, char const *argv[])
 	// _print(mul);
 	
 	// _certify_mul(m1, m2, mul);
+
+	// de-allocate the cache
+	for (k = 0; k < d - 1; k++) {
+		for (i = 0; i < 8; i++) {
+			_free_matrix(cache[k][i]);
+			free(cache[k][i]);
+		}
+		free(cache[k]);
+	}
+	free(cache);
 
 	_free_matrix(m1);
 	_free_matrix(m2);
@@ -114,14 +151,11 @@ void _print(struct _matrix* m) {
 
 void _mul_square_dc(struct _matrix *m1, struct _matrix *m2, 
 	int ind1[4], int ind2[4], struct _matrix *res) {
-	if (m1->rows != m1->cols || m2->rows != m2->cols || 
-		m1->rows != m2->rows) {
-		return;
-	}
 	if ((ind1[1] - ind1[0]) != (ind1[3] - ind1[2]) || 
 		(ind2[1] - ind2[0]) != (ind2[3] - ind2[2]) ||
 		(ind1[1] - ind1[0]) != (ind2[1] - ind2[0])) {
 		// incompatible
+		printf("error: incompatible matrices\n");
 		return;
 	}
 
@@ -130,6 +164,7 @@ void _mul_square_dc(struct _matrix *m1, struct _matrix *m2,
 	int n = i2 - i1 + 1;
 	if (res->rows != n || res->cols !=n) {
 		// incompatible result dimension
+		printf("error: incompatible matrices\n");
 		return;
 	}
 	if (n == 1) {
@@ -193,6 +228,72 @@ void _mul_square_dc(struct _matrix *m1, struct _matrix *m2,
 	// free memory
 	for (k = 0; k < 8; k++) {
 		_free_matrix(&subs[k]);
+	}
+}
+
+void _mul_square_dc_cache(struct _matrix *m1, struct _matrix *m2, 
+	int ind1[4], int ind2[4], struct _matrix *res, int clevel, struct _matrix ***cache) {
+	if ((ind1[1] - ind1[0]) != (ind1[3] - ind1[2]) || 
+		(ind2[1] - ind2[0]) != (ind2[3] - ind2[2]) ||
+		(ind1[1] - ind1[0]) != (ind2[1] - ind2[0])) {
+		// incompatible
+		printf("error: incompatible matrices\n");
+		return;
+	}
+
+	int i1 = ind1[0], i2 = ind1[1], j1 = ind1[2], j2 = ind1[3],
+		p1 = ind2[0], p2 = ind2[1], r1 = ind2[2], r2 = ind2[3];
+	int n = i2 - i1 + 1;
+	if (res->rows != n || res->cols != n) {
+		// incompatible result dimension
+		printf("error: incompatible result domensions, it should %ix%i\n", n, n);
+		return;
+	}
+	if (n == 1) {
+		// base case
+		res->data[0][0] = m1->data[i1][j1] * m2->data[p1][r1];
+		return;
+	}
+	
+	// divide and conquer
+	int q = (i2 - i1) / 2; // mid point relative index
+	// a11*b11 + a12*b21, a12*b22 + a11*b12
+	// a21*b11 + a22*b21, a22*b22 + a21*b12
+
+	// calculate indices: O(1)
+	int a[4][4] = {
+		{i1, i1 + q, j1, j1 + q}, 		{i1, i1 + q, j1 + q + 1, j2},
+		{i1 + q + 1, i2, j1, j1 + q}, 	{i1 + q + 1, i2, j1 + q + 1, j2}
+	};
+	int b[4][4] = {
+		{p1, p1 + q, r1, r1 + q}, 		{p1, p1 + q, r1 + q + 1, r2},
+		{p1 + q + 1, p2, r1, r1 + q}, 	{p1 + q + 1, p2, r1 + q + 1, r2}
+	};
+
+	// solve sub-problems: 8*T(n/2) time and O(n^2) space
+	struct _matrix **subs = cache[clevel];
+	_mul_square_dc_cache(m1, m2, a[0], b[0], subs[0], clevel+1, cache);
+	_mul_square_dc_cache(m1, m2, a[1], b[2], subs[1], clevel+1, cache);
+	_mul_square_dc_cache(m1, m2, a[1], b[3], subs[2], clevel+1, cache);
+	_mul_square_dc_cache(m1, m2, a[0], b[1], subs[3], clevel+1, cache);
+	_mul_square_dc_cache(m1, m2, a[2], b[0], subs[4], clevel+1, cache);
+	_mul_square_dc_cache(m1, m2, a[3], b[2], subs[5], clevel+1, cache);
+	_mul_square_dc_cache(m1, m2, a[3], b[3], subs[6], clevel+1, cache);
+	_mul_square_dc_cache(m1, m2, a[2], b[1], subs[7], clevel+1, cache);
+
+	// combine the results: O(n^2)
+	int i, j;
+	for (i = 0; i < n/2; i++) {
+		for (j = 0; j < n/2; j++) {
+			// a11*b11 + a12*b21
+			res->data[i][j] = subs[0]->data[i][j] + subs[1]->data[i][j];
+			// a12*b22 + a11*b12
+			res->data[i][j+q+1] = subs[2]->data[i][j] + subs[3]->data[i][j];
+			// a21*b11 + a22*b21
+			res->data[i+q+1][j] = subs[4]->data[i][j] + subs[5]->data[i][j];
+			// a22*b22 + a21*b12
+			res->data[i+q+1][j+q+1] = subs[6]->data[i][j] + subs[7]->data[i][j];
+		}
 	}
 }
 
