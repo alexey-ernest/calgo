@@ -50,10 +50,13 @@ struct _matrix* _mul_square_brute(struct _matrix *m1, struct _matrix *m2) {
 	res->rows = m1->rows;
 	res->cols = m2->cols;
 	res->data = (int**)malloc(n * sizeof(int*));
-
-	int i, j, k;
+	int i;
 	for (i = 0; i < n; i++) {
 		res->data[i] = (int*)malloc(n * sizeof(int));
+	}
+
+	int j, k;
+	for (i = 0; i < n; i++) {
 		for (j = 0; j < n; j++) {
 			res->data[i][j] = 0;
 			for (k = 0; k < n; k++) {
