@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_VAL	100
+#define MAX_VAL			100
+#define BRUTE_SIZE_OPT	4
 
 struct _matrix {
 	int rows;
@@ -15,7 +16,7 @@ struct _matrix {
 struct _matrix* _gen_rand_matrix(int);
 void _mul_square_dc(struct _matrix*, struct _matrix*, int[4], int[4], struct _matrix*);
 void _mul_square_dc_cache(struct _matrix*, struct _matrix*, int[4], int[4], struct _matrix*, int, struct _matrix ***);
-void _mul_square_brute(struct _matrix *, struct _matrix *, struct _matrix *);
+void _mul_square_brute(struct _matrix *, struct _matrix *, int[4], int[4], struct _matrix *);
 void _free_matrix(struct _matrix*);
 void _print(struct _matrix*);
 void _certify_mul(struct _matrix*, struct _matrix*, struct _matrix*);
@@ -55,11 +56,14 @@ int main(int argc, char const *argv[])
 	while (k > 0) {
 		k = k >> 1;
 		d++;
+		if (k <= BRUTE_SIZE_OPT) {
+			break;
+		}		
 	}
 
 	struct _matrix ***cache = (struct _matrix ***)malloc(d * sizeof(struct _matrix**));
 	int j, p = n;
-	for (k = 0; k < d - 1; k++) {
+	for (k = 0; k < d; k++) {
 		cache[k] = (struct _matrix **)malloc(8 * sizeof(struct _matrix*));
 		for (i = 0; i < 8; i++) {
 			cache[k][i] = (struct _matrix*)malloc(sizeof(struct _matrix));
@@ -104,18 +108,21 @@ int main(int argc, char const *argv[])
 	return 0;
 }
 
-void _mul_square_brute(struct _matrix *m1, struct _matrix *m2, struct _matrix *res) {
-	if (m1->rows != m1->cols || m2->rows != m2->cols || m1->rows != m2->rows) {
+void _mul_square_brute(struct _matrix *m1, struct _matrix *m2, 
+	int ind1[4], int ind2[4], struct _matrix *res) {
+
+	int n = ind1[1] - ind1[0] + 1;
+	if (res->rows != res->cols || res->rows != n) {
+		printf("incompatible inputs or the output\n");
 		return;
 	}
-	int n = m1->rows;
 
 	int i, j, k;
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < n; j++) {
 			res->data[i][j] = 0;
 			for (k = 0; k < n; k++) {
-				res->data[i][j] += m1->data[i][k] * m2->data[k][j];
+				res->data[i][j] += m1->data[ind1[0] + i][ind1[2] + k] * m2->data[ind2[0] + k][ind2[2] + j];
 			}
 		}
 	}
@@ -167,6 +174,7 @@ void _mul_square_dc(struct _matrix *m1, struct _matrix *m2,
 		printf("error: incompatible matrices\n");
 		return;
 	}
+
 	if (n == 1) {
 		// base case
 		res->data[0][0] = m1->data[i1][j1] * m2->data[p1][r1];
@@ -249,11 +257,18 @@ void _mul_square_dc_cache(struct _matrix *m1, struct _matrix *m2,
 		printf("error: incompatible result domensions, it should %ix%i\n", n, n);
 		return;
 	}
-	if (n == 1) {
-		// base case
-		res->data[0][0] = m1->data[i1][j1] * m2->data[p1][r1];
+
+	if (n <= BRUTE_SIZE_OPT) {
+		// using brute force algorithm for smaller dimensions
+		_mul_square_brute(m1, m2, ind1, ind2, res);
 		return;
 	}
+
+	// if (n == 1) {
+	// 	// base case
+	// 	res->data[0][0] = m1->data[i1][j1] * m2->data[p1][r1];
+	// 	return;
+	// }
 	
 	// divide and conquer
 	int q = (i2 - i1) / 2; // mid point relative index
