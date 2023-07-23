@@ -1,10 +1,20 @@
-/* Matrix multiplication, Strassen's method in (O(n^(lg7)) time and O(n^3) space) */
+/* Matrix multiplication, Strassen's method:
+   - O(n^(lg7)) time and O(n^3) space without optimizations
+   - memory pre-allocation for temporal results and re-usage between same level nodes
+     results in memory allocation decreased to 8/3*n^2
+   - time optimization using brute force for smaller dimensions, tests
+     show that optimal size for brute force switch is n=16, for n=4096
+     it gives a boost of 8x compared to pure Strassen's algorithm and >6x
+     boost for n=8192, plus it decreases memory usage as we need less levels
+     of caches.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_VAL	100
+#define MAX_VAL			100
+#define BRUTE_SIZE_OPT	16
 
 struct _matrix {
 	int rows;
@@ -15,7 +25,7 @@ struct _matrix {
 struct _matrix* _gen_rand_matrix(int);
 void _mul_square_strassen(struct _matrix*, struct _matrix*, int[4], int[4], struct _matrix*);
 void _mul_square_strassen_cache(struct _matrix*, struct _matrix*, int[4], int[4], struct _matrix*, int, struct _matrix***);
-void _mul_square_brute(struct _matrix *, struct _matrix *, struct _matrix *);
+void _mul_square_brute(struct _matrix *, struct _matrix *, int[4], int[4], struct _matrix *);
 void _add_matrix(struct _matrix*, struct _matrix*, int[4], int[4], struct _matrix*);
 void _sub_matrix(struct _matrix*, struct _matrix*, int[4], int[4], struct _matrix*);
 void _free_matrix(struct _matrix*);
@@ -57,11 +67,14 @@ int main(int argc, char const *argv[])
 	while (k > 0) {
 		k = k >> 1;
 		d++;
+		if (k <= BRUTE_SIZE_OPT) {
+			break;
+		}		
 	}
 
 	struct _matrix ***cache = (struct _matrix ***)malloc(d * sizeof(struct _matrix**));
 	int j, p = n;
-	for (k = 0; k < d - 1; k++) {
+	for (k = 0; k < d; k++) {
 		cache[k] = (struct _matrix **)malloc(21 * sizeof(struct _matrix*));
 		for (i = 0; i < 21; i++) {
 			cache[k][i] = (struct _matrix*)malloc(sizeof(struct _matrix));
@@ -77,6 +90,7 @@ int main(int argc, char const *argv[])
 
 	int ind[4] = {0, n-1, 0, n-1};
 	_mul_square_strassen_cache(m1, m2, ind, ind, mul, 0, cache);
+	// _mul_square_brute(m1, m2, ind, ind, mul);
 	
 	// _print(m1);
 	// printf("\n");
@@ -106,18 +120,21 @@ int main(int argc, char const *argv[])
 	return 0;
 }
 
-void _mul_square_brute(struct _matrix *m1, struct _matrix *m2, struct _matrix *res) {
-	if (m1->rows != m1->cols || m2->rows != m2->cols || m1->rows != m2->rows) {
+void _mul_square_brute(struct _matrix *m1, struct _matrix *m2, 
+	int ind1[4], int ind2[4], struct _matrix *res) {
+
+	int n = ind1[1] - ind1[0] + 1;
+	if (res->rows != res->cols || res->rows != n) {
+		printf("incompatible inputs or the output\n");
 		return;
 	}
-	int n = m1->rows;
 
 	int i, j, k;
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < n; j++) {
 			res->data[i][j] = 0;
 			for (k = 0; k < n; k++) {
-				res->data[i][j] += m1->data[i][k] * m2->data[k][j];
+				res->data[i][j] += m1->data[ind1[0] + i][ind1[2] + k] * m2->data[ind2[0] + k][ind2[2] + j];
 			}
 		}
 	}
@@ -306,11 +323,18 @@ void _mul_square_strassen_cache(struct _matrix *m1, struct _matrix *m2,
 		printf("error: incompatible result dimensions, should be %ix%i\n", n, n);
 		return;
 	}
-	if (n == 1) {
-		// base case
-		res->data[0][0] = m1->data[i1][j1] * m2->data[p1][r1];
+
+	if (n <= BRUTE_SIZE_OPT) {
+		// using brute force algorithm for smaller dimensions
+		_mul_square_brute(m1, m2, ind1, ind2, res);
 		return;
 	}
+
+	// if (n == 1) {
+	// 	// base case
+	// 	res->data[0][0] = m1->data[i1][j1] * m2->data[p1][r1];
+	// 	return;
+	// }
 	
 	// divide and conquer
 	int q = (i2 - i1) / 2; // mid point relative index
