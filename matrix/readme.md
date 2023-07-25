@@ -3,7 +3,7 @@
   - Divide-and-concure algorithm has O(n^3) time complexity and requires additional space up to O(n^3) due to extra calculations for 8 sub-problems of size n/2. It starts to outperform brute force algorithm at n >= 4096.
   - Strassen's algorithm has a lower assymptotic time complexity of O(n^lg(7))=O(n^2.81), but it requires an extra space like a div-and-c algorithm. It outperforms the divide-and-c algorihtm and starts to outperform brute force algorithm at n>=4096 (160s Strassen's vs 800s brute vs 330s divide-and-c).
     
-## Expiremental results
+## Experimental results
  - ./matrix_brute.o 2048  22.84s user 0.11s system 99% cpu 23.056 total
  - ./matrix_dc.o 2048  9.47s user 0.05s system 99% cpu 9.568 total
  - ./matrix_strassen.o 2048  3.56s user 0.04s system 99% cpu 3.629 total
