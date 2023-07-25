@@ -9,6 +9,6 @@
  - ./matrix_strassen.o 2048  3.56s user 0.04s system 99% cpu 3.629 total
  - ./matrix_dc.o 4096  75.10s user 0.35s system 99% cpu 1:15.85 total
  - ./matrix_strassen.o 4096  24.35s user 0.18s system 99% cpu 24.624 total
- - ./matrix_strassen.o 8192  171.93s user 0.94s system 99% cpu 2:53.80 total
- - ./matrix_strassen.o 16384  1223.34s user 11.15s system 98% cpu 20:49.63 total
- - ./matrix_strassen.o 32768  8460.71s user 89.33s system 98% cpu 2:24:30.79 total
+ - ./matrix_strassen.o 8192  171.93s user 0.94s system 99% cpu 2:53.80 total (1.5 GB used for caches)
+ - ./matrix_strassen.o 16384  1223.34s user 11.15s system 98% cpu 20:49.63 total (5.6 GB of memory used for caches)
+ - ./matrix_strassen.o 32768  8460.71s user 89.33s system 98% cpu 2:24:30.79 total (25 GB of memory used for caches)
