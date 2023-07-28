@@ -27,12 +27,14 @@ int main(int argc, char const *argv[])
 	int k, l;
 	l = b;
 	k = 0;
+	int s = 0;
 	while (l != 0) {
 		k++;
 		l = l >> 1;
+		s = s * 2 + 1;
 	}
 
-	printf("lg(b)=%i bits\n", k);
+	printf("lg(b)=%i bits, s=%i\n", k, s);
 
 	int i, j;
 	int h, t;
@@ -59,7 +61,7 @@ int main(int argc, char const *argv[])
 		}
 
 		// normalize the number by b
-		num = num % b;
+		num = (float)num / (float)s * (float)b;
 
 		// if a number less than a, it falls in a probability a/b
 		if (num < a) {
